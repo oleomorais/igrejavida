@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Igreja Vida — Frequência</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --orange: #E85D04;
+    --orange-light: #F48C3A;
+    --bg: #0C0C0C;
+    --surface: #141414;
+    --surface2: #1C1C1C;
+    --border: #262626;
+    --text: #EFEFEF;
+    --muted: #5A5A5A;
+    --muted2: #888;
+    --green: #22C55E;
+    --red: #EF4444;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── LOGIN ── */
+  #login-screen {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200;
+  }
+
+  .login-box {
+    width: 340px;
+    padding: 44px 36px 36px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    text-align: center;
+  }
+
+  .login-icon {
+    width: 44px; height: 44px;
+    background: var(--orange);
+    border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+
+  .login-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .login-sub { font-size: 13px; color: var(--muted2); margin-bottom: 28px; }
+
+  .login-box input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 11px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    margin-bottom: 10px;
+    outline: none;
+    transition: border-color 0.15s;
+    text-align: center;
+    letter-spacing: 0.15em;
+  }
+  .login-box input:focus { border-color: var(--orange); }
+
+  .login-btn {
+    width: 100%;
+    background: var(--orange);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .login-btn:hover { opacity: 0.85; }
+
+  .login-error {
+    color: var(--red);
+    font-size: 12px;
+    margin-top: 10px;
+    min-height: 16px;
+  }
+
+  /* ── SHELL ── */
+  #app { display: none; }
+
+  header {
+    height: 56px;
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0;
+    background: var(--bg);
+    z-index: 50;
+  }
+
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; font-weight: 600; letter-spacing: 0.04em;
+  }
+
+  .brand-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--orange);
+  }
+
+  .header-right { display: flex; align-items: center; gap: 14px; }
+
+  .status {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 12px; color: var(--muted2);
+  }
+
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.3s;
+  }
+  .status-dot.ok { background: var(--green); }
+  .status-dot.loading { background: var(--orange); animation: blink 1s infinite; }
+  .status-dot.error { background: var(--red); }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+  .btn-sm {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted2);
+  }
+  .btn-sm:hover { border-color: var(--orange); color: var(--orange); }
+
+  /* ── MAIN ── */
+  main { padding: 24px 28px 48px; max-width: 1360px; margin: 0 auto; }
+
+  /* ── FILTERS ── */
+  .filter-bar {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 24px; flex-wrap: wrap;
+  }
+
+  .filter-sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+
+  .pill {
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--muted2);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .pill:hover { color: var(--text); border-color: #444; }
+  .pill.active { background: var(--orange); border-color: var(--orange); color: white; }
+
+  .date-range { display: flex; align-items: center; gap: 6px; }
+  .date-range input[type="date"] {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+  }
+  .date-range input[type="date"]:focus { border-color: var(--orange); }
+  .date-range span { font-size: 12px; color: var(--muted); }
+
+  /* ── KPI ROW ── */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .kpi:hover { border-color: #333; }
+
+  .kpi-accent {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--orange);
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+  .kpi.ready .kpi-accent { opacity: 1; }
+
+  .kpi-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-weight: 500;
+    margin-bottom: 10px;
+  }
+
+  .kpi-val {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+
+  .kpi-footer {
+    font-size: 11px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .up { color: var(--green); }
+  .down { color: var(--red); }
+  .neutral { color: var(--muted2); }
+
+  /* ── GRID ── */
+  .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted2);
+    margin-bottom: 4px;
+  }
+
+  .card-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 18px;
+  }
+
+  .chart-wrap { position: relative; }
+
+  /* ── TABLE ── */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 12px;
+  }
+
+  .table-head {
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+
+  thead th {
+    padding: 9px 14px;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+
+  tbody td { padding: 11px 14px; white-space: nowrap; }
+
+  .td-date { color: var(--orange); font-weight: 600; font-size: 13px; }
+  .td-total { font-weight: 700; color: var(--text); }
+  .td-grand { font-weight: 700; color: var(--orange); font-size: 14px; }
+  .td-muted { color: var(--muted2); }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    background: rgba(232,93,4,0.12);
+    color: var(--orange-light);
+    font-weight: 500;
+  }
+
+  /* ── EMPTY / LOADING ── */
+  .empty {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    height: 180px; gap: 10px;
+    color: var(--muted2); font-size: 13px;
+  }
+
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--orange);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 1100px) {
+    .kpi-row { grid-template-columns: repeat(3, 1fr); }
+    .grid-2-1 { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 700px) {
+    main { padding: 16px; }
+    header { padding: 0 16px; }
+    .kpi-row { grid-template-columns: 1fr 1fr; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: 1fr; }
+    .filter-sep { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-icon">⛪</div>
+    <div class="login-title">Igreja Vida</div>
+    <div class="login-sub">Dashboard de Frequência</div>
+    <input type="password" id="pwd" placeholder="••••••••" autofocus />
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+    <div class="login-error" id="login-err"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="brand">
+      <div class="brand-dot"></div>
+      Igreja Vida — Frequência
+    </div>
+    <div class="header-right">
+      <div class="status">
+        <div class="status-dot" id="status-dot"></div>
+        <span id="status-txt">—</span>
+      </div>
+      <button class="btn-sm" onclick="loadData()">↻ Atualizar</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- FILTERS -->
+    <div class="filter-bar">
+      <button class="pill active" onclick="setRange(this,30)">30 dias</button>
+      <button class="pill" onclick="setRange(this,60)">60 dias</button>
+      <button class="pill" onclick="setRange(this,90)">90 dias</button>
+      <button class="pill" onclick="setRange(this,180)">6 meses</button>
+      <button class="pill" onclick="setRange(this,365)">1 ano</button>
+      <button class="pill" onclick="setRange(this,0)">Tudo</button>
+      <div class="filter-sep"></div>
+      <div class="date-range">
+        <input type="date" id="d-from" onchange="setCustom()" />
+        <span>→</span>
+        <input type="date" id="d-to" onchange="setCustom()" />
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-row" id="kpi-row">
+      <div class="empty" style="grid-column:1/-1"><div class="spinner"></div></div>
+    </div>
+
+    <!-- LINHA 1: trend line + donut -->
+    <div class="grid-2-1">
+      <div class="card">
+        <div class="card-title">Frequência Total</div>
+        <div class="card-sub">Total por domingo (Auditório + MIIV)</div>
+        <div class="chart-wrap" style="height:240px"><canvas id="c-trend"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Mix por Horário</div>
+        <div class="card-sub">Média Auditório no período</div>
+        <div class="chart-wrap" style="height:240px"><canvas id="c-donut"></canvas></div>
+      </div>
+    </div>
+
+    <!-- LINHA 2: horários empilhado + MoM -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Auditório por Horário</div>
+        <div class="card-sub">09h · 11h · 17h · 19h</div>
+        <div class="chart-wrap" style="height:210px"><canvas id="c-bars"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Crescimento Mês a Mês</div>
+        <div class="card-sub">Variação % sobre média mensal anterior</div>
+        <div class="chart-wrap" style="height:210px"><canvas id="c-mom"></canvas></div>
+      </div>
+    </div>
+
+    <!-- LINHA 3: MIIV breakdown + scatter -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">MIIV por Horário</div>
+        <div class="card-sub">Ministério infantil — distribuição</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="c-miiv"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Auditório vs MIIV</div>
+        <div class="card-sub">Proporção infantil no total</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="c-ratio"></canvas></div>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-card">
+      <div class="table-head">
+        <span class="card-title" style="margin:0">Histórico Completo</span>
+        <span id="table-count" style="font-size:11px;color:var(--muted)"></span>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>09h</th><th>11h</th><th>17h</th><th>19h</th>
+              <th>Aud. Total</th>
+              <th>MIIV</th>
+              <th>Total Geral</th>
+              <th>vs anterior</th>
+              <th>Observações</th>
+            </tr>
+          </thead>
+          <tbody id="t-body">
+            <tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted2)">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ─── CONFIG ──────────────────────────────────────────────────────────────────
+const PASSWORD   = 'vida2024';
+const SHEET_ID   = '2PACX-1vTXTX2_pBtkxVfSkUyMrs0Fg0EW_eESV3ekiMq5ORinSh8A-SI6l7PWi-eaAZI1fhvqsXDrxU18FO1j';
+const CSV_URL    = `https://docs.google.com/spreadsheets/d/e/${SHEET_ID}/pub?gid=0&single=true&output=csv`;
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let ALL = [], FILTERED = [], RANGE = 30;
+const CHS = {};
+
+// ─── LOGIN ───────────────────────────────────────────────────────────────────
+function doLogin() {
+  if (document.getElementById('pwd').value === PASSWORD) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadData();
+  } else {
+    document.getElementById('login-err').textContent = 'Senha incorreta.';
+    document.getElementById('pwd').value = '';
+  }
+}
+document.getElementById('pwd').addEventListener('keydown', e => e.key === 'Enter' && doLogin());
+
+// ─── FETCH ───────────────────────────────────────────────────────────────────
+async function loadData() {
+  setStatus('loading', 'Buscando dados...');
+  try {
+    // Try direct fetch first; fall back to allorigins proxy if CORS blocks
+    let text;
+    try {
+      const r = await fetch(CSV_URL, { cache: 'no-cache' });
+      if (!r.ok) throw new Error('direct failed');
+      text = await r.text();
+      if (text.includes('<!DOCTYPE')) throw new Error('got html not csv');
+    } catch {
+      const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(CSV_URL)}`;
+      const r2 = await fetch(proxy, { cache: 'no-cache' });
+      const j = await r2.json();
+      text = j.contents;
+    }
+    ALL = parseCSV(text);
+    applyFilter();
+    setStatus('ok', `Atualizado às ${now()}`);
+  } catch(e) {
+    setStatus('error', 'Erro ao carregar dados');
+    console.error(e);
+  }
+}
+
+// ─── CSV PARSE ───────────────────────────────────────────────────────────────
+function parseCSV(raw) {
+  const lines = raw.trim().split('\n');
+  const out = [];
+  for (let i = 1; i < lines.length; i++) {
+    const c = splitLine(lines[i]);
+    if (!c[0]?.trim()) continue;
+    const d = parseDate(c[0].trim());
+    if (!d) continue;
+    const n = (v) => { const x = parseInt((c[v]||'').replace(/[^\d]/g,'')); return isNaN(x) ? 0 : x; };
+    out.push({
+      date: d,
+      label: fmtDate(d),
+      aud09: n(1), aud11: n(2), aud17: n(3), aud19: n(4), audTot: n(5),
+      m09: n(6), m11: n(7), m17: n(8), m19: n(9), miivTot: n(10),
+      obs: (c[11]||'').replace(/^"|"$/g,'').trim()
+    });
+  }
+  return out.sort((a,b) => a.date - b.date);
+}
+
+function splitLine(l) {
+  const r=[]; let cur='', q=false;
+  for (const ch of l) {
+    if (ch==='"') q=!q;
+    else if (ch===',' && !q) { r.push(cur); cur=''; }
+    else cur+=ch;
+  }
+  r.push(cur);
+  return r;
+}
+
+function parseDate(s) {
+  let m;
+  if ((m=s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/))) return new Date(+m[3],+m[2]-1,+m[1]);
+  if ((m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/))) return new Date(+m[1],+m[2]-1,+m[3]);
+  return null;
+}
+
+// ─── FILTERS ─────────────────────────────────────────────────────────────────
+function setRange(btn, days) {
+  RANGE = days;
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('d-from').value = '';
+  document.getElementById('d-to').value = '';
+  applyFilter();
+}
+
+function setCustom() {
+  const f = document.getElementById('d-from').value;
+  const t = document.getElementById('d-to').value;
+  if (f || t) {
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    RANGE = -1;
+    applyFilter();
+  }
+}
+
+function applyFilter() {
+  const f = document.getElementById('d-from').value;
+  const t = document.getElementById('d-to').value;
+  if (f || t) {
+    const fd = f ? new Date(f+'T00:00') : null;
+    const td = t ? new Date(t+'T23:59') : null;
+    FILTERED = ALL.filter(r => (!fd||r.date>=fd)&&(!td||r.date<=td));
+  } else if (RANGE === 0) {
+    FILTERED = [...ALL];
+  } else {
+    const cut = new Date(); cut.setDate(cut.getDate()-RANGE);
+    FILTERED = ALL.filter(r => r.date >= cut);
+  }
+  render();
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+function render() {
+  renderKPIs();
+  renderTrend();
+  renderDonut();
+  renderBars();
+  renderMoM();
+  renderMIIV();
+  renderRatio();
+  renderTable();
+}
+
+// KPIs
+function renderKPIs() {
+  if (!FILTERED.length) {
+    document.getElementById('kpi-row').innerHTML = '<div class="empty" style="grid-column:1/-1">Sem dados para o período selecionado.</div>';
+    return;
+  }
+  const last = FILTERED[FILTERED.length-1];
+  const prev = FILTERED[FILTERED.length-2];
+  const totals = FILTERED.map(r => r.audTot + r.miivTot);
+  const avgTot = Math.round(mean(totals));
+  const avgAud = Math.round(mean(FILTERED.map(r => r.audTot)));
+  const avgMiiv = Math.round(mean(FILTERED.map(r => r.miivTot)));
+  const maxTot = Math.max(...totals);
+  const maxRow = FILTERED.find(r => r.audTot+r.miivTot===maxTot);
+  const lastTot = last.audTot+last.miivTot;
+  const prevTot = prev ? prev.audTot+prev.miivTot : null;
+  const delta = prevTot ? pct(lastTot, prevTot) : null;
+  const miivPct = avgTot ? Math.round((avgMiiv/avgTot)*100) : 0;
+
+  const cards = [
+    {
+      label: 'Último Domingo',
+      val: lastTot.toLocaleString('pt-BR'),
+      foot: delta !== null
+        ? `<span class="${delta>=0?'up':'down'}">${delta>=0?'↑':'↓'} ${Math.abs(delta).toFixed(1)}% vs domingo anterior</span>`
+        : `<span class="neutral">${fmtDate(last.date)}</span>`
+    },
+    {
+      label: 'Média do Período',
+      val: avgTot.toLocaleString('pt-BR'),
+      foot: `<span class="neutral">${FILTERED.length} domingos analisados</span>`
+    },
+    {
+      label: 'Média Auditório',
+      val: avgAud.toLocaleString('pt-BR'),
+      foot: `<span class="neutral">${(100-miivPct)}% do total</span>`
+    },
+    {
+      label: 'Média MIIV',
+      val: avgMiiv.toLocaleString('pt-BR'),
+      foot: `<span class="neutral">${miivPct}% do total</span>`
+    },
+    {
+      label: 'Recorde',
+      val: maxTot.toLocaleString('pt-BR'),
+      foot: `<span class="neutral">${maxRow ? fmtDate(maxRow.date) : '—'}</span>`
+    }
+  ];
+
+  document.getElementById('kpi-row').innerHTML = cards.map(c => `
+    <div class="kpi ready">
+      <div class="kpi-accent"></div>
+      <div class="kpi-label">${c.label}</div>
+      <div class="kpi-val">${c.val}</div>
+      <div class="kpi-footer">${c.foot}</div>
+    </div>
+  `).join('');
+}
+
+// Trend line
+function renderTrend() {
+  const labels = FILTERED.map(r => r.label);
+  const totals = FILTERED.map(r => r.audTot + r.miivTot);
+  const avgVal = mean(totals);
+  const avgLine = totals.map(() => Math.round(avgVal));
+
+  destroy('c-trend');
+  CHS['c-trend'] = new Chart(document.getElementById('c-trend'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Total',
+          data: totals,
+          borderColor: '#E85D04',
+          backgroundColor: ctx => {
+            const g = ctx.chart.ctx.createLinearGradient(0,0,0,240);
+            g.addColorStop(0,'rgba(232,93,4,0.15)');
+            g.addColorStop(1,'rgba(232,93,4,0)');
+            return g;
+          },
+          borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#E85D04',
+          tension: 0.35, fill: true
+        },
+        {
+          label: 'Média',
+          data: avgLine,
+          borderColor: '#444',
+          borderWidth: 1,
+          borderDash: [5,4],
+          pointRadius: 0,
+          tension: 0
+        }
+      ]
+    },
+    options: chartOpts({ legend: true })
+  });
+}
+
+// Donut
+function renderDonut() {
+  const d = [
+    mean(FILTERED.map(r=>r.aud09)),
+    mean(FILTERED.map(r=>r.aud11)),
+    mean(FILTERED.map(r=>r.aud17)),
+    mean(FILTERED.map(r=>r.aud19))
+  ].map(Math.round);
+
+  destroy('c-donut');
+  CHS['c-donut'] = new Chart(document.getElementById('c-donut'), {
+    type: 'doughnut',
+    data: {
+      labels: ['09h','11h','17h','19h'],
+      datasets: [{ data: d, backgroundColor: ['#E85D04','#F48C3A','#B34702','#7C3100'], borderWidth: 0, hoverOffset: 8 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: { display: true, position: 'right', labels: { color:'#888', font:{size:12}, boxWidth:10, padding:10 } },
+        tooltip: tooltipStyle()
+      }
+    }
+  });
+}
+
+// Stacked bars horários
+function renderBars() {
+  destroy('c-bars');
+  CHS['c-bars'] = new Chart(document.getElementById('c-bars'), {
+    type: 'bar',
+    data: {
+      labels: FILTERED.map(r=>r.label),
+      datasets: [
+        { label:'09h', data: FILTERED.map(r=>r.aud09), backgroundColor:'#E85D04', borderRadius:2 },
+        { label:'11h', data: FILTERED.map(r=>r.aud11), backgroundColor:'#F48C3A', borderRadius:2 },
+        { label:'17h', data: FILTERED.map(r=>r.aud17), backgroundColor:'#B34702', borderRadius:2 },
+        { label:'19h', data: FILTERED.map(r=>r.aud19), backgroundColor:'#7C3100', borderRadius:2 },
+      ]
+    },
+    options: chartOpts({ stacked: true, legend: true })
+  });
+}
+
+// MoM
+function renderMoM() {
+  const byM = {};
+  ALL.forEach(r => {
+    const k = `${r.date.getFullYear()}-${pad(r.date.getMonth()+1)}`;
+    if (!byM[k]) byM[k] = [];
+    byM[k].push(r.audTot + r.miivTot);
+  });
+  const months = Object.keys(byM).sort();
+  const avgs = months.map(m => mean(byM[m]));
+  const pcts = avgs.map((v,i) => i===0 ? null : parseFloat(pct(v,avgs[i-1]).toFixed(1)));
+  const lbls = months.map(m => { const [y,mo]=m.split('-'); return `${['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][+mo-1]} ${y.slice(2)}`; });
+
+  const dl = lbls.slice(1);
+  const dp = pcts.slice(1);
+
+  destroy('c-mom');
+  CHS['c-mom'] = new Chart(document.getElementById('c-mom'), {
+    type: 'bar',
+    data: {
+      labels: dl,
+      datasets: [{
+        label:'%',
+        data: dp,
+        backgroundColor: dp.map(v => v===null ? '#333' : v>=0 ? 'rgba(34,197,94,0.75)' : 'rgba(239,68,68,0.75)'),
+        borderRadius: 3
+      }]
+    },
+    options: {
+      ...chartOpts({}),
+      plugins: {
+        ...chartOpts({}).plugins,
+        tooltip: { ...tooltipStyle(), callbacks: { label: ctx => ` ${ctx.raw>0?'+':''}${ctx.raw}%` } }
+      }
+    }
+  });
+}
+
+// MIIV bars
+function renderMIIV() {
+  destroy('c-miiv');
+  CHS['c-miiv'] = new Chart(document.getElementById('c-miiv'), {
+    type: 'bar',
+    data: {
+      labels: FILTERED.map(r=>r.label),
+      datasets: [
+        { label:'09h', data: FILTERED.map(r=>r.m09), backgroundColor:'rgba(232,93,4,0.5)', borderRadius:2 },
+        { label:'11h', data: FILTERED.map(r=>r.m11), backgroundColor:'rgba(244,140,58,0.5)', borderRadius:2 },
+        { label:'17h', data: FILTERED.map(r=>r.m17), backgroundColor:'rgba(179,71,2,0.5)', borderRadius:2 },
+        { label:'19h', data: FILTERED.map(r=>r.m19), backgroundColor:'rgba(124,49,0,0.5)', borderRadius:2 },
+      ]
+    },
+    options: chartOpts({ stacked: true, legend: true })
+  });
+}
+
+// Ratio area
+function renderRatio() {
+  const labels = FILTERED.map(r=>r.label);
+  const aud = FILTERED.map(r=>r.audTot);
+  const miiv = FILTERED.map(r=>r.miivTot);
+
+  destroy('c-ratio');
+  CHS['c-ratio'] = new Chart(document.getElementById('c-ratio'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label:'Auditório', data: aud, backgroundColor:'rgba(232,93,4,0.8)', borderRadius:2 },
+        { label:'MIIV',      data: miiv, backgroundColor:'rgba(244,140,58,0.4)', borderRadius:2 }
+      ]
+    },
+    options: chartOpts({ stacked: true, legend: true })
+  });
+}
+
+// Table
+function renderTable() {
+  const rows = [...FILTERED].reverse();
+  document.getElementById('table-count').textContent = `${rows.length} domingos`;
+
+  document.getElementById('t-body').innerHTML = rows.map((r,i) => {
+    const prev = FILTERED[FILTERED.length - 1 - i - 1 + FILTERED.length - FILTERED.length] || null;
+    // get actual prev in sorted order
+    const idx = FILTERED.indexOf(r);
+    const prevR = idx > 0 ? FILTERED[idx-1] : null;
+    const tot = r.audTot + r.miivTot;
+    const prevTot = prevR ? prevR.audTot + prevR.miivTot : null;
+    const d = prevTot ? pct(tot, prevTot) : null;
+    return `
+      <tr>
+        <td class="td-date">${r.label}</td>
+        <td class="td-muted">${r.aud09||'—'}</td>
+        <td class="td-muted">${r.aud11||'—'}</td>
+        <td class="td-muted">${r.aud17||'—'}</td>
+        <td class="td-muted">${r.aud19||'—'}</td>
+        <td class="td-total">${r.audTot||'—'}</td>
+        <td class="td-muted">${r.miivTot||'—'}</td>
+        <td class="td-grand">${tot||'—'}</td>
+        <td class="${d===null?'td-muted':d>=0?'up':'down'}">${d===null?'—':(d>=0?'↑ ':'↓ ')+Math.abs(d).toFixed(1)+'%'}</td>
+        <td>${r.obs?`<span class="tag">${r.obs}</span>`:''}</td>
+      </tr>`;
+  }).join('');
+}
+
+// ─── CHART HELPERS ───────────────────────────────────────────────────────────
+function tooltipStyle() {
+  return {
+    backgroundColor:'#1C1C1C', borderColor:'#2A2A2A', borderWidth:1,
+    titleColor:'#EEE', bodyColor:'#999', padding:10, cornerRadius:6
+  };
+}
+
+function chartOpts({ stacked=false, legend=false } = {}) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: legend
+        ? { display:true, labels:{ color:'#666', font:{size:11}, boxWidth:10, padding:12 } }
+        : { display:false },
+      tooltip: tooltipStyle()
+    },
+    scales: {
+      x: {
+        stacked,
+        ticks: { color:'#555', font:{size:10}, maxRotation:45 },
+        grid: { color:'#1E1E1E' }
+      },
+      y: {
+        stacked,
+        ticks: { color:'#555', font:{size:10} },
+        grid: { color:'#1E1E1E' }
+      }
+    }
+  };
+}
+
+function destroy(id) { if (CHS[id]) { CHS[id].destroy(); delete CHS[id]; } }
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+function mean(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+function pct(a,b)  { return b ? ((a-b)/b)*100 : 0; }
+function pad(n)    { return String(n).padStart(2,'0'); }
+function now()     { return new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
+function fmtDate(d){ return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`; }
+
+function setStatus(state, txt) {
+  const dot = document.getElementById('status-dot');
+  dot.className = 'status-dot ' + state;
+  document.getElementById('status-txt').textContent = txt;
+}
+</script>
+</body>
+</html>
